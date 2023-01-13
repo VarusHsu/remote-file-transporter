@@ -1,4 +1,4 @@
-module Remote-File_Transporter
+module remote-file-transporter
 
 go 1.19
 
