@@ -1,6 +1,6 @@
 import sys
 
-from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton
+from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit
 
 import i18n
 
@@ -15,8 +15,20 @@ config = {
         "view_box_h": 360,
         "setting_button_move_w": 658,
         "setting_button_move_h": 385,
+        "setting_button_w": 70,
         "setting_windows_w": 500,
         "setting_windows_h": 314,
+        "save_button_move_w": 20,
+        "save_button_move_h": 280,
+        "save_button_w": 80,
+        "cancel_button_move_w": 400,
+        "cancel_button_move_h": 280,
+        "cancel_button_w": 80,
+        "server_ip_label_move_w": 20,
+        "server_ip_label_move_h": 20,
+        "download_dir_label_move_w": 20,
+        "download_dir_label_move_h": 50,
+
     },
     "windows": {
         "path_split": "\\"
@@ -29,16 +41,44 @@ config = {
 
 class SettingWindows:
     windows: QWidget
+    save_button: QPushButton
+    cancel_button: QPushButton
+    server_ip_label: QLabel
+    download_dir_label: QLabel
+    server_ip_line_edit: QLineEdit
+    download_dir_line_edit: QLineEdit
 
     os: str
     language: str
 
     def __init__(self, os: str, language: str):
         self.os = os
+        self.language = language
 
     def render(self):
         self.windows = QWidget()
-        self.windows.setWindowTitle(i18n.i18n["Setting"][[self.language]])
+        self.windows.setWindowTitle(i18n.i18n["Setting"][self.language])
+        self.windows.setFixedSize(config[self.os]["setting_windows_w"], config[self.os]["setting_windows_h"])
+
+        self.save_button = QPushButton(self.windows)
+        self.save_button.setText(i18n.i18n["Save"][self.language])
+        self.save_button.move(config[self.os]["save_button_move_w"], config[self.os]["save_button_move_h"])
+        self.save_button.setFixedWidth(config[self.os]["save_button_w"])
+
+        self.cancel_button = QPushButton(self.windows)
+        self.cancel_button.setText(i18n.i18n["Cancel"][self.language])
+        self.cancel_button.move(config[self.os]["cancel_button_move_w"], config[self.os]["cancel_button_move_h"])
+        self.cancel_button.setFixedWidth(config[self.os]["cancel_button_w"])
+
+        self.server_ip_label = QLabel(self.windows)
+        self.server_ip_label.setText(i18n.i18n["ServerAddress"][self.language])
+        self.server_ip_label.move(config[self.os]["server_ip_label_move_w"], config[self.os]["server_ip_label_move_h"])
+
+        self.download_dir_label = QLabel(self.windows)
+        self.download_dir_label.setText(i18n.i18n["DownloadTo"][self.language])
+        self.download_dir_label.move(config[self.os]["download_dir_label_move_w"], config[self.os]["download_dir_label_move_h"])
+
+        self.windows.show()
         pass
 
 
@@ -55,6 +95,8 @@ class RemoteFileTransporterClient:
     def __init__(self, os: str):
         self.os = os
         self.language = "ja_jp"
+        self.language = "en_us"
+        self.language = "zh_cn"
 
     def setting_button_on_click(self):
         self.setting_window = SettingWindows(self.os, self.language)
@@ -74,6 +116,8 @@ class RemoteFileTransporterClient:
         self.setting_button = QPushButton(self.windows)
         self.setting_button.move(config[self.os]["setting_button_move_w"], config[self.os]["setting_button_move_h"])
         self.setting_button.setText(i18n.i18n["Setting"][self.language])
+        self.setting_button.setFixedWidth(config[self.os]["setting_button_w"])
+        self.setting_button.clicked.connect(self.setting_button_on_click)
 
         self.windows.show()
         sys.exit(self.app.exec())
