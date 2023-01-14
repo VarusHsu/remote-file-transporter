@@ -1,5 +1,6 @@
 import sys
 
+from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit
 
 import i18n
@@ -28,6 +29,12 @@ config = {
         "server_ip_label_move_h": 20,
         "download_dir_label_move_w": 20,
         "download_dir_label_move_h": 50,
+        "server_ip_line_edit_w": 260,
+        "server_ip_line_edit_move_w": 135,
+        "server_ip_line_edit_move_h": 17,
+        "download_dir_line_edit_w": 260,
+        "download_dir_line_edit_move_w": 135,
+        "download_dir_line_edit_move_h": 47,
 
     },
     "windows": {
@@ -37,6 +44,16 @@ config = {
         "path_split": "/"
     }
 }
+
+
+class RerenderNotifySignal(QObject):
+    pass
+
+
+class UpdateDataNotifySignal(QObject):
+    update_download_dir = pyqtSignal(str)
+    update_server_address = pyqtSignal(str)
+    pass
 
 
 class SettingWindows:
@@ -50,8 +67,9 @@ class SettingWindows:
 
     os: str
     language: str
+    server_address: str
 
-    def __init__(self, os: str, language: str):
+    def __init__(self, os: str, language: str, server_address: str, download_dir: str):
         self.os = os
         self.language = language
 
@@ -76,7 +94,21 @@ class SettingWindows:
 
         self.download_dir_label = QLabel(self.windows)
         self.download_dir_label.setText(i18n.i18n["DownloadTo"][self.language])
-        self.download_dir_label.move(config[self.os]["download_dir_label_move_w"], config[self.os]["download_dir_label_move_h"])
+        self.download_dir_label.move(config[self.os]["download_dir_label_move_w"],
+                                     config[self.os]["download_dir_label_move_h"])
+
+        self.server_ip_line_edit = QLineEdit(self.windows)
+        self.server_ip_line_edit.setFixedWidth(config[self.os]["server_ip_line_edit_w"])
+        self.server_ip_line_edit.move(config[self.os]["server_ip_line_edit_move_w"],
+                                      config[self.os]["server_ip_line_edit_move_h"])
+
+        self.download_dir_line_edit = QLineEdit(self.windows)
+        self.download_dir_line_edit.setFixedWidth(config[self.os]["download_dir_line_edit_w"])
+        self.download_dir_line_edit.move(config[self.os]["download_dir_line_edit_move_w"],
+                                         config[self.os]["download_dir_line_edit_move_h"])
+
+        def save_button_on_click():
+            pass
 
         self.windows.show()
         pass
@@ -90,16 +122,18 @@ class RemoteFileTransporterClient:
     setting_window: SettingWindows
 
     os: str
-    language:str
+    language: str
+    server_address: str
+    download_dir: str
 
     def __init__(self, os: str):
         self.os = os
         self.language = "ja_jp"
-        self.language = "en_us"
-        self.language = "zh_cn"
+        # self.language = "en_us"
+        # self.language = "zh_cn"
 
     def setting_button_on_click(self):
-        self.setting_window = SettingWindows(self.os, self.language)
+        self.setting_window = SettingWindows(self.os, self.language, self.server_address, self.download_dir)
         self.setting_window.render()
 
     def render(self):
