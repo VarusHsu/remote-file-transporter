@@ -49,6 +49,16 @@ i18n = {
         "zh_cn": "服务器错误",
         "ja_jp": "サーバーエラー",
         "en_us": "Server Error",
+    },
+    "Connect": {
+        "zh_cn": "连接",
+        "ja_jp": "接続",
+        "en_us": "Connect"
+    },
+    "Refresh": {
+        "zh_cn": "刷新",
+        "ja_jp": "リフレッシュする",
+        "en_us": "Refresh"
     }
 
 }
