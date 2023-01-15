@@ -5,6 +5,7 @@ from threading import Thread
 
 import requests
 from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit
 
 import i18n
@@ -54,6 +55,7 @@ config = {
 
 class RerenderNotifySignal(QObject):
     rerender_view_box = pyqtSignal(list)
+    rerender_view_box_files = pyqtSignal(list)
     pass
 
 
@@ -194,13 +196,22 @@ class RemoteFileTransporterClient:
     def update_cur_server_dir_signal_on_receive(self, path: str):
         self.cur_server_dir = path
 
-    def rerender_view_box_signal_on_receive(self, items: list[str]):
-        print("rerender")
-        print(items)
+    def rerender_view_box_signal_on_receive(self, items: list):
         self.view_box.clear()
         for item in items:
             self.view_box.addItem(item)
-        self.view_box.show()
+
+    def rerender_view_box_dir_signal_on_receive(self, items: dict):
+        self.view_box.clear()
+        for item in items:
+            self.view_box.addItem(item["name"])
+        i = 0
+        font = QFont()
+        font.setBold(True)
+        for item in items:
+            if item["type"] == "dir":
+                self.view_box.item(i).setFont(font)
+            i += 1
 
     def get_home_dir_from_remote(self, address: str):
         url = "http://" + self.server_address + ":50422" + "/get_user_dir"
@@ -231,7 +242,7 @@ class RemoteFileTransporterClient:
             else:
                 response = json.loads(rsp.content)
                 response = json.loads(response["response"])
-                self.rerender_notify_signal.rerender_view_box.emit(response["items"])
+                self.rerender_notify_signal.rerender_view_box_files.emit(response["items"])
         pass
 
     def connect_button_on_click_task(self):
@@ -277,6 +288,7 @@ class RemoteFileTransporterClient:
         self.rerender_notify_signal.rerender_view_box.connect(self.rerender_view_box_signal_on_receive)
         self.update_data_notify_signal.update_server_address.connect(self.update_server_address_signal_on_receive)
         self.update_data_notify_signal.update_download_dir.connect(self.update_download_dir_signal_on_receive)
+        self.rerender_notify_signal.rerender_view_box_files.connect(self.rerender_view_box_dir_signal_on_receive)
         self.windows.show()
         sys.exit(self.app.exec())
 
