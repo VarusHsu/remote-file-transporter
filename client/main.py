@@ -1,5 +1,9 @@
+import json
 import sys
+import time
+from threading import Thread
 
+import requests
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit
 
@@ -47,6 +51,7 @@ config = {
 
 
 class RerenderNotifySignal(QObject):
+    rerender_view_box = pyqtSignal(list)
     pass
 
 
@@ -57,6 +62,7 @@ class UpdateDataNotifySignal(QObject):
 
 
 class SettingWindows:
+    # widget
     windows: QWidget
     save_button: QPushButton
     cancel_button: QPushButton
@@ -65,13 +71,31 @@ class SettingWindows:
     server_ip_line_edit: QLineEdit
     download_dir_line_edit: QLineEdit
 
+    # config
     os: str
     language: str
     server_address: str
 
-    def __init__(self, os: str, language: str, server_address: str, download_dir: str):
+    # signals
+    update_data_notify_signal: UpdateDataNotifySignal
+    rerender_notify_signal: RerenderNotifySignal
+
+    def __init__(self, os: str, language: str, server_address: str, download_dir: str,
+                 update_data_notify_signal: UpdateDataNotifySignal, rerender_notify_signal: RerenderNotifySignal):
         self.os = os
         self.language = language
+        self.update_data_notify_signal = update_data_notify_signal
+        self.rerender_notify_signal = rerender_notify_signal
+
+    def save_button_on_click(self):
+        self.windows.close()
+        # self.rerender_notify_signal.rerender_view_box.emit([i18n.i18n["Loading"][self.language]])
+        # self.update_data_notify_signal.update_download_dir.emit(self.download_dir_line_edit.text())
+        # self.update_data_notify_signal.update_server_address.emit(self.server_ip_line_edit.text())
+        pass
+
+    def cancel_button_on_click(self):
+        self.windows.close()
 
     def render(self):
         self.windows = QWidget()
@@ -82,11 +106,13 @@ class SettingWindows:
         self.save_button.setText(i18n.i18n["Save"][self.language])
         self.save_button.move(config[self.os]["save_button_move_w"], config[self.os]["save_button_move_h"])
         self.save_button.setFixedWidth(config[self.os]["save_button_w"])
+        self.save_button.clicked.connect(self.save_button_on_click)
 
         self.cancel_button = QPushButton(self.windows)
         self.cancel_button.setText(i18n.i18n["Cancel"][self.language])
         self.cancel_button.move(config[self.os]["cancel_button_move_w"], config[self.os]["cancel_button_move_h"])
         self.cancel_button.setFixedWidth(config[self.os]["cancel_button_w"])
+        self.cancel_button.clicked.connect(self.cancel_button_on_click)
 
         self.server_ip_label = QLabel(self.windows)
         self.server_ip_label.setText(i18n.i18n["ServerAddress"][self.language])
@@ -107,34 +133,87 @@ class SettingWindows:
         self.download_dir_line_edit.move(config[self.os]["download_dir_line_edit_move_w"],
                                          config[self.os]["download_dir_line_edit_move_h"])
 
-        def save_button_on_click():
-            pass
-
         self.windows.show()
         pass
 
 
 class RemoteFileTransporterClient:
+    # widgets
     app: QApplication
     windows: QWidget
     view_box: QListWidget
     setting_button: QPushButton
     setting_window: SettingWindows
 
+    # configs
     os: str
     language: str
     server_address: str
     download_dir: str
 
+    # signals
+    update_data_notify_signal: UpdateDataNotifySignal
+    rerender_notify_signal: RerenderNotifySignal
+
     def __init__(self, os: str):
         self.os = os
         self.language = "ja_jp"
         # self.language = "en_us"
-        # self.language = "zh_cn"
+        self.language = "zh_cn"
+        self.server_address = ""
+        self.download_dir = ""
+
+        self.update_data_notify_signal = UpdateDataNotifySignal()
+        self.rerender_notify_signal = RerenderNotifySignal()
 
     def setting_button_on_click(self):
-        self.setting_window = SettingWindows(self.os, self.language, self.server_address, self.download_dir)
+        self.setting_window = SettingWindows(self.os, self.language, self.server_address, self.download_dir,
+                                             self.update_data_notify_signal, self.rerender_notify_signal)
         self.setting_window.render()
+
+    def update_download_dir_signal_on_receive(self, path: str):
+        self.download_dir = path
+
+    def update_server_address_signal_on_receive(self, address: str):
+        self.server_address = address
+        thread: Thread = Thread(target=self.get_home_dir_from_remote(address))
+        thread.start()
+
+    def rerender_view_box_signal_on_receive(self, items: list[str]):
+        self.view_box.clear()
+        for item in items:
+            self.view_box.addItem(item)
+
+    def get_home_dir_from_remote(self, address: str):
+        url = "http://" + self.server_address + ":50422" + "/get_user_dir"
+        try:
+            rsp = requests.get(url)
+        except Exception as e:
+            self.rerender_notify_signal.rerender_view_box.emit([i18n.i18n["ConnectError"][self.language]])
+        else:
+            if rsp.status_code != 200:
+                self.rerender_notify_signal.rerender_view_box.emit([i18n.i18n["ServerError"][self.language],
+                                                                    f"Status Code:{rsp.status_code}"])
+            else:
+                context = json.loads(rsp.content)
+                url = "http://" + self.server_address + ":50422" + f"/download?path={context['response']}"
+
+                self.get_walk_dir_from_remote(url=url)
+
+    def get_walk_dir_from_remote(self, url: str):
+        try:
+            rsp = requests.get(url)
+        except Exception as e:
+            self.rerender_notify_signal.rerender_view_box.emit([i18n.i18n["ConnectError"][self.language]])
+        else:
+            if rsp.status_code != 200:
+                self.rerender_notify_signal.rerender_view_box.emit([i18n.i18n["ServerError"][self.language],
+                                                                    f"Status Code:{rsp.status_code}"])
+                print(rsp.content)
+            else:
+                response = json.loads(rsp.content)
+                response = json.loads(response["response"])
+                self.rerender_notify_signal.rerender_view_box.emit(response["items"])
 
     def render(self):
         self.app = QApplication(sys.argv)
@@ -153,6 +232,9 @@ class RemoteFileTransporterClient:
         self.setting_button.setFixedWidth(config[self.os]["setting_button_w"])
         self.setting_button.clicked.connect(self.setting_button_on_click)
 
+        self.rerender_notify_signal.rerender_view_box.connect(self.rerender_view_box_signal_on_receive)
+        self.update_data_notify_signal.update_server_address.connect(self.update_server_address_signal_on_receive)
+        self.update_data_notify_signal.update_download_dir.connect(self.update_download_dir_signal_on_receive)
         self.windows.show()
         sys.exit(self.app.exec())
 

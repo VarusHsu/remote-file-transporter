@@ -33,5 +33,22 @@ i18n = {
         "zh_cn": "服务器地址:",
         "ja_jp": "サーバーアドレス:",
         "en_us": "Server Address:"
+    },
+    "Loading": {
+        "zh_cn": "加载中...",
+        "ja_jp": "読み込み中...",
+        "en_us": "Loading...",
+    },
+    "ConnectError": {
+        "zh_cn": "网络请求失败，请检查你的服务器地址、安全组、网络环境等等。",
+        "ja_jp": "ネットワーク リクエストに失敗しました。サーバー アドレス、セキュリティ グループ、ネットワーク環境などを確認してください。",
+        "en_us": "The network request failed, please check your server address, security group, network environment, "
+                 "etc.",
+    },
+    "ServerError": {
+        "zh_cn": "服务器错误",
+        "ja_jp": "サーバーエラー",
+        "en_us": "Server Error",
     }
+
 }
