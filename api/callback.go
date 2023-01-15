@@ -8,9 +8,17 @@ import (
 	"os/user"
 )
 
+const fileItemTypeDir = "dir"
+const fileItemTypeFile = "file"
+
 type dir struct {
-	DirName string   `json:"dir_name"`
-	Items   []string `json:"items"`
+	DirName string     `json:"dir_name"`
+	Items   []fileItem `json:"items"`
+}
+
+type fileItem struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 func DownloadCallback(c *gin.Context) {
@@ -76,14 +84,24 @@ func GetUserDirCallback(c *gin.Context) {
 	}
 }
 
-func walkDir(root string) ([]string, error) {
-	items := make([]string, 0)
+func walkDir(root string) ([]fileItem, error) {
+	items := make([]fileItem, 0)
 	files, err := os.ReadDir(root)
 	if err != nil {
 		return nil, err
 	}
 	for _, file := range files {
-		items = append(items, file.Name())
+		fileType := ""
+		if file.IsDir() {
+			fileType = fileItemTypeDir
+		} else {
+			fileType = fileItemTypeFile
+		}
+		item := fileItem{
+			Name: file.Name(),
+			Type: fileType,
+		}
+		items = append(items, item)
 	}
 	return items, nil
 }
