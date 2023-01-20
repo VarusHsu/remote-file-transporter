@@ -3,56 +3,12 @@ import sys
 from threading import Thread
 
 import requests
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, Qt
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit, QFileDialog
 
 import i18n
-
-config = {
-    "mac_os": {
-        "path_split": "/",
-        "windows_w": 750,
-        "windows_h": 421,
-        "view_box_move_w": 20,
-        "view_box_move_h": 20,
-        "view_box_w": 710,
-        "view_box_h": 360,
-        "setting_button_move_w": 658,
-        "setting_button_move_h": 385,
-        "setting_button_w": 70,
-        "setting_windows_w": 500,
-        "setting_windows_h": 314,
-        "save_button_move_w": 20,
-        "save_button_move_h": 280,
-        "save_button_w": 80,
-        "cancel_button_move_w": 400,
-        "cancel_button_move_h": 280,
-        "cancel_button_w": 80,
-        "server_ip_label_move_w": 20,
-        "server_ip_label_move_h": 20,
-        "download_dir_label_move_w": 20,
-        "download_dir_label_move_h": 50,
-        "server_ip_line_edit_w": 260,
-        "server_ip_line_edit_move_w": 135,
-        "server_ip_line_edit_move_h": 17,
-        "download_dir_line_edit_w": 260,
-        "download_dir_line_edit_move_w": 135,
-        "download_dir_line_edit_move_h": 47,
-        "connect_button_w": 70,
-        "connect_button_move_w": 20,
-        "connect_button_move_h": 385,
-        "select_button_w": 70,
-        "select_button_move_w": 410,
-        "select_button_move_h": 43,
-    },
-    "windows": {
-        "path_split": "\\"
-    },
-    "ubuntu": {
-        "path_split": "/"
-    }
-}
+from config import config
 
 
 class RerenderNotifySignal(QObject):
@@ -66,6 +22,15 @@ class UpdateDataNotifySignal(QObject):
     update_cur_server_dir = pyqtSignal(str)
     update_server_address = pyqtSignal(str)
     pass
+
+
+class ViewBox(QListWidget):
+    rightClicked = pyqtSignal()
+
+    def mousePressEvent(self, e) -> None:
+        super().mousePressEvent(e)
+        if e.button() == Qt.MouseButton.RightButton:
+            self.rightClicked.emit()
 
 
 class SettingWindows:
@@ -172,12 +137,14 @@ class RemoteFileTransporterClient:
     # widgets
     app: QApplication
     windows: QWidget
-    view_box: QListWidget
+    view_box: ViewBox
     setting_button: QPushButton
     connect_button: QPushButton
     setting_window: SettingWindows
 
     # configs
+    cur_server_path: str
+    cur_server_walked: list
     os: str
     language: str
     server_address: str
@@ -213,6 +180,12 @@ class RemoteFileTransporterClient:
         thread: Thread = Thread(target=self.connect_button_on_click_task)
         thread.start()
 
+    def view_box_on_double_click(self):
+        pass
+
+    def view_box_on_right_click(self):
+        pass
+
     def update_download_dir_signal_on_receive(self, path: str):
         self.download_dir = path
 
@@ -239,7 +212,7 @@ class RemoteFileTransporterClient:
                 self.view_box.item(i).setFont(font)
             i += 1
 
-    def get_home_dir_from_remote(self, address: str):
+    def get_home_dir_from_remote(self):
         url = "http://" + self.server_address + ":50422" + "/get_user_dir"
         try:
             rsp = requests.get(url)
@@ -251,6 +224,7 @@ class RemoteFileTransporterClient:
                                                                     f"Status Code:{rsp.status_code}"])
             else:
                 context = json.loads(rsp.content)
+                self.cur_server_dir = context["response"]
                 url = "http://" + self.server_address + ":50422" + f"/download?path={context['response']}"
 
                 self.get_walk_dir_from_remote(url=url)
@@ -268,6 +242,7 @@ class RemoteFileTransporterClient:
             else:
                 response = json.loads(rsp.content)
                 response = json.loads(response["response"])
+                self.cur_server_walked = response["items"]
                 self.rerender_notify_signal.rerender_view_box_files.emit(response["items"])
         pass
 
@@ -294,10 +269,12 @@ class RemoteFileTransporterClient:
         self.windows.setFixedSize(config[self.os]["windows_w"], config[self.os]["windows_h"])
         self.windows.setWindowTitle(i18n.i18n["Remote File Transporter"][self.language])
 
-        self.view_box = QListWidget(self.windows)
+        self.view_box = ViewBox(self.windows)
         self.view_box.move(config[self.os]["view_box_move_w"], config[self.os]["view_box_move_h"])
         self.view_box.resize(config[self.os]["view_box_w"], config[self.os]["view_box_h"])
         self.view_box.addItem(i18n.i18n["Welcome"][self.language])
+        self.view_box.doubleClicked.connect(self.view_box_on_double_click)
+        self.view_box.rightClicked.connect(self.view_box_on_right_click)
 
         self.setting_button = QPushButton(self.windows)
         self.setting_button.move(config[self.os]["setting_button_move_w"], config[self.os]["setting_button_move_h"])
