@@ -163,6 +163,7 @@ class RemoteFileTransporterClient:
         self.server_address = ""
         self.download_dir = ""
         self.cur_server_dir = ""
+        self.cur_server_walked = []
 
         self.update_data_notify_signal = UpdateDataNotifySignal()
         self.rerender_notify_signal = RerenderNotifySignal()
@@ -181,7 +182,36 @@ class RemoteFileTransporterClient:
         thread.start()
 
     def view_box_on_double_click(self):
-        pass
+        if len(self.cur_server_walked) == 0:
+            return
+        clicked_text = self.view_box.currentItem().text()
+        item = None
+        for file in self.cur_server_walked:
+            if clicked_text == file["name"]:
+                item = file
+                break
+        if item is None:
+            return
+        if item["type"] == "dir":
+            if item["name"] == ".":
+                return
+            elif item["name"] == "..":
+                if self.cur_server_dir == "/":
+                    return
+                else:
+                    if self.cur_server_dir.rfind("/") == 0:
+                        path = "/"
+                    else:
+                        path = self.cur_server_dir[0:self.cur_server_dir.rfind("/")]
+                    print(path)
+            else:
+                path = self.cur_server_dir + f"/{item['name']}"
+            url = "http://" + self.server_address + ":50422" + f"/download?path={path}"
+            self.cur_server_dir = path
+            print(url)
+            self.get_walk_dir_from_remote(url)
+        else:
+            pass
 
     def view_box_on_right_click(self):
         pass
@@ -200,7 +230,7 @@ class RemoteFileTransporterClient:
         for item in items:
             self.view_box.addItem(item)
 
-    def rerender_view_box_dir_signal_on_receive(self, items: dict):
+    def rerender_view_box_dir_signal_on_receive(self, items: list):
         self.view_box.clear()
         for item in items:
             self.view_box.addItem(item["name"])
@@ -242,8 +272,11 @@ class RemoteFileTransporterClient:
             else:
                 response = json.loads(rsp.content)
                 response = json.loads(response["response"])
-                self.cur_server_walked = response["items"]
-                self.rerender_notify_signal.rerender_view_box_files.emit(response["items"])
+
+                res = [{"name": ".", "type": "dir"}, {"name": "..", "type": "dir"}] + response[
+                    "items"]
+                self.cur_server_walked = res
+                self.rerender_notify_signal.rerender_view_box_files.emit(res)
         pass
 
     def connect_button_on_click_task(self):
