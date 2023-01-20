@@ -80,6 +80,7 @@ class SettingWindows:
     os: str
     language: str
     server_address: str
+    download_dir: str
 
     # signals
     update_data_notify_signal: UpdateDataNotifySignal
@@ -91,6 +92,8 @@ class SettingWindows:
         self.language = language
         self.update_data_notify_signal = update_data_notify_signal
         self.rerender_notify_signal = rerender_notify_signal
+        self.download_dir = download_dir
+        self.server_address = server_address
 
     def save_button_on_click(self):
         self.windows.close()
@@ -132,6 +135,7 @@ class SettingWindows:
         self.server_ip_line_edit.setFixedWidth(config[self.os]["server_ip_line_edit_w"])
         self.server_ip_line_edit.move(config[self.os]["server_ip_line_edit_move_w"],
                                       config[self.os]["server_ip_line_edit_move_h"])
+        self.server_ip_line_edit.setText(self.server_address)
 
         self.download_dir_line_edit = QLineEdit(self.windows)
         self.download_dir_line_edit.setFixedWidth(config[self.os]["download_dir_line_edit_w"])
