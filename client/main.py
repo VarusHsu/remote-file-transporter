@@ -1,12 +1,11 @@
 import json
 import sys
-import time
 from threading import Thread
 
 import requests
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit
+from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit, QFileDialog
 
 import i18n
 
@@ -43,6 +42,9 @@ config = {
         "connect_button_w": 70,
         "connect_button_move_w": 20,
         "connect_button_move_h": 385,
+        "select_button_w": 70,
+        "select_button_move_w": 410,
+        "select_button_move_h": 43,
     },
     "windows": {
         "path_split": "\\"
@@ -75,6 +77,8 @@ class SettingWindows:
     download_dir_label: QLabel
     server_ip_line_edit: QLineEdit
     download_dir_line_edit: QLineEdit
+    select_button: QPushButton
+    select_dir_filedialog: QFileDialog
 
     # config
     os: str
@@ -99,11 +103,22 @@ class SettingWindows:
         self.windows.close()
         self.update_data_notify_signal.update_download_dir.emit(self.download_dir_line_edit.text())
         self.update_data_notify_signal.update_server_address.emit(self.server_ip_line_edit.text())
-        self.update_data_notify_signal.update_cur_server_dir.emit("")
+        self.update_data_notify_signal.update_cur_server_dir.emit(self.download_dir)
         pass
 
     def cancel_button_on_click(self):
         self.windows.close()
+
+    def select_button_on_click(self):
+        self.select_dir_filedialog = QFileDialog(self.windows)
+        self.select_dir_filedialog.setWindowTitle(i18n.i18n["DownloadTo"][self.language])
+        self.select_dir_filedialog.setFileMode(QFileDialog.FileMode.Directory)
+        directory = self.select_dir_filedialog.getExistingDirectory()
+        if directory != "":
+            self.download_dir = directory
+        self.select_dir_filedialog.close()
+        self.download_dir_line_edit.setText(directory)
+        pass
 
     def render(self):
         self.windows = QWidget()
@@ -141,6 +156,13 @@ class SettingWindows:
         self.download_dir_line_edit.setFixedWidth(config[self.os]["download_dir_line_edit_w"])
         self.download_dir_line_edit.move(config[self.os]["download_dir_line_edit_move_w"],
                                          config[self.os]["download_dir_line_edit_move_h"])
+        self.download_dir_line_edit.setText(self.download_dir)
+
+        self.select_button = QPushButton(self.windows)
+        self.select_button.setText(i18n.i18n["Select"][self.language])
+        self.select_button.move(config[self.os]["select_button_move_w"], config[self.os]["select_button_move_h"])
+        self.select_button.setFixedWidth(config[self.os]["select_button_w"])
+        self.select_button.clicked.connect(self.select_button_on_click)
 
         self.windows.show()
         pass

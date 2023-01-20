@@ -59,6 +59,10 @@ i18n = {
         "zh_cn": "刷新",
         "ja_jp": "リフレッシュする",
         "en_us": "Refresh"
+    },
+    "Select": {
+        "zh_cn": "选择",
+        "ja_jp": "選択する",
+        "en_us": "Select",
     }
-
 }
