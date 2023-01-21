@@ -236,6 +236,7 @@ class RemoteFileTransporterClient:
         pass
 
     def download_action_on_click(self):
+        print("")
         pass
 
     def update_download_dir_signal_on_receive(self, path: str):
