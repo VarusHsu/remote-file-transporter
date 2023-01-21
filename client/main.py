@@ -175,8 +175,8 @@ class RemoteFileTransporterClient:
     def __init__(self, os: str):
         self.os = os
         # self.language = "ja_jp"
-        # self.language = "en_us"
-        self.language = "zh_cn"
+        self.language = "en_us"
+        # self.language = "zh_cn"
         self.get_cache()
         self.cur_server_dir = ""
         self.cur_server_walked = []
