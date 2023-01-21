@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 from threading import Thread
 
 import requests
@@ -68,7 +69,10 @@ class SettingWindows:
         self.windows.close()
         self.update_data_notify_signal.update_download_dir.emit(self.download_dir_line_edit.text())
         self.update_data_notify_signal.update_server_address.emit(self.server_ip_line_edit.text())
-        self.update_data_notify_signal.update_cur_server_dir.emit(self.download_dir)
+        self.update_data_notify_signal.update_cur_server_dir.emit("")
+        self.download_dir = self.download_dir_line_edit.text()
+        self.server_address = self.server_ip_line_edit.text()
+        self.set_cache()
         pass
 
     def cancel_button_on_click(self):
@@ -81,8 +85,19 @@ class SettingWindows:
         directory = self.select_dir_filedialog.getExistingDirectory()
         if directory != "":
             self.download_dir = directory
+            self.download_dir_line_edit.setText(directory)
         self.select_dir_filedialog.close()
-        self.download_dir_line_edit.setText(directory)
+        pass
+
+    @staticmethod
+    def get_user_home_path() -> str:
+        return os.path.expanduser("~")
+
+    def set_cache(self):
+        file = os.path.join(self.get_user_home_path(), ".rft_cache")
+        with open(file, "w") as f:
+            f.write(self.server_address + "\n")
+            f.write(self.download_dir + "\n")
         pass
 
     def render(self):
@@ -160,8 +175,7 @@ class RemoteFileTransporterClient:
         # self.language = "ja_jp"
         # self.language = "en_us"
         self.language = "zh_cn"
-        self.server_address = ""
-        self.download_dir = ""
+        self.get_cache()
         self.cur_server_dir = ""
         self.cur_server_walked = []
 
@@ -296,6 +310,24 @@ class RemoteFileTransporterClient:
         url = "http://" + self.server_address + ":50422" + f"/download?path={self.cur_server_dir}"
         self.get_walk_dir_from_remote(url=url)
 
+    @staticmethod
+    def get_user_home_path() -> str:
+        return os.path.expanduser("~")
+
+    def get_default_download_path(self) -> str:
+        return os.path.join(self.get_user_home_path(), "Downloads")
+
+    def get_cache(self) -> bool:
+        file = os.path.join(self.get_user_home_path(), ".rft_cache")
+        if not os.path.exists(file):
+            self.download_dir = self.get_default_download_path()
+            self.server_address = ""
+            return False
+        with open(file) as f:
+            self.server_address = f.readline()[0:-1]
+            self.download_dir = f.readline()[0:-1]
+            return True
+
     def render(self):
         self.app = QApplication(sys.argv)
         self.windows = QWidget()
@@ -327,7 +359,6 @@ class RemoteFileTransporterClient:
         self.rerender_notify_signal.rerender_view_box_files.connect(self.rerender_view_box_dir_signal_on_receive)
         self.windows.show()
         sys.exit(self.app.exec())
-
     pass
 
 
