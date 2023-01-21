@@ -64,5 +64,10 @@ i18n = {
         "zh_cn": "选择",
         "ja_jp": "選択する",
         "en_us": "Select",
-    }
+    },
+    "Download": {
+        "zh_cn": "下载",
+        "ja_jp": "",
+        "en_us": "Download",
+    },
 }

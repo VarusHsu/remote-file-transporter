@@ -5,8 +5,8 @@ from threading import Thread
 
 import requests
 from PyQt6.QtCore import QObject, pyqtSignal, Qt
-from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit, QFileDialog
+from PyQt6.QtGui import QFont, QCursor
+from PyQt6.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QLabel, QLineEdit, QFileDialog, QMenu, QWidgetAction
 
 import i18n
 from config import config
@@ -156,6 +156,8 @@ class RemoteFileTransporterClient:
     setting_button: QPushButton
     connect_button: QPushButton
     setting_window: SettingWindows
+    menu: QMenu
+    action: QWidgetAction
 
     # configs
     cur_server_path: str
@@ -228,6 +230,9 @@ class RemoteFileTransporterClient:
             pass
 
     def view_box_on_right_click(self):
+        self.menu = QMenu(self.windows)
+        self.menu.addAction(i18n.i18n["Download"][self.language])
+        self.menu.popup(QCursor.pos())
         pass
 
     def update_download_dir_signal_on_receive(self, path: str):
