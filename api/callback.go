@@ -21,7 +21,7 @@ type fileItem struct {
 	Type string `json:"type"`
 }
 
-func DownloadCallback(c *gin.Context) {
+func VisitCallback(c *gin.Context) {
 	path := c.Query("path")
 	if path == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -105,3 +105,8 @@ func walkDir(root string) ([]fileItem, error) {
 	}
 	return items, nil
 }
+
+func DownloadCallback(c *gin.Context){
+	return
+}
+

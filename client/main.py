@@ -220,7 +220,7 @@ class RemoteFileTransporterClient:
                     print(path)
             else:
                 path = self.cur_server_dir + f"/{item['name']}"
-            url = "http://" + self.server_address + ":50422" + f"/download?path={path}"
+            url = "http://" + self.server_address + ":50422" + f"/visit?path={path}"
             self.cur_server_dir = path
             print(url)
             self.get_walk_dir_from_remote(url)
@@ -269,7 +269,7 @@ class RemoteFileTransporterClient:
             else:
                 context = json.loads(rsp.content)
                 self.cur_server_dir = context["response"]
-                url = "http://" + self.server_address + ":50422" + f"/download?path={context['response']}"
+                url = "http://" + self.server_address + ":50422" + f"/visit?path={context['response']}"
 
                 self.get_walk_dir_from_remote(url=url)
 
@@ -307,7 +307,7 @@ class RemoteFileTransporterClient:
                 else:
                     context = json.loads(rsp.content)
                     self.cur_server_dir = context["response"]
-        url = "http://" + self.server_address + ":50422" + f"/download?path={self.cur_server_dir}"
+        url = "http://" + self.server_address + ":50422" + f"/visit?path={self.cur_server_dir}"
         self.get_walk_dir_from_remote(url=url)
 
     @staticmethod
