@@ -235,6 +235,9 @@ class RemoteFileTransporterClient:
         self.menu.popup(QCursor.pos())
         pass
 
+    def download_action_on_click(self):
+        pass
+
     def update_download_dir_signal_on_receive(self, path: str):
         self.download_dir = path
 
